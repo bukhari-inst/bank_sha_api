@@ -94,7 +94,12 @@ class AuthController extends Controller
                 return response()->json(['message' => 'Login credentials are invalid'], 400);
             }
 
-            return $token;
+            $userResponse = getUser($request->email);
+            $userResponse->token = $token;
+            $userResponse->token_expires_in = auth()->factory()->getTTL() * 60;
+            $userResponse->token_type = 'bearer';
+
+            return response()->json($userResponse);
         } catch (JWTException $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
