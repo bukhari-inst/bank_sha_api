@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use Midtrans\Snap;
+use Midtrans\Config;
 use App\Models\Transaction;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -50,14 +52,76 @@ class TopUpController extends Controller
             ]);
 
             // call to midtrans
+            $params = $this->buildMidtransParameters([
+                "transaction_code" => $transaction->transaction_code,
+                "amount" => $transaction->amount,
+                "payment_method" => $paymentMethod->code,
+            ]);
+
+            $midtrans = $this->callMidtrans($params);
 
             DB::commit();
-            return response()->json(['message' => 'success'], 500);
+
+            return response()->json($midtrans);
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
 
         return 'success';
+    }
+
+    private function callMidtrans(array $params)
+    {
+        \Midtrans\Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        \Midtrans\Config::$isProduction = (bool) env('MIDTRANS_IS_PRODUCTION');
+        \Midtrans\Config::$isSanitized = (bool) env('MIDTRANS_IS_SANITIZED');
+        \Midtrans\Config::$is3ds = (bool) env('MIDTRANS_IS_3DS');
+
+        $createTransaction = \Midtrans\Snap::createTransaction($params);
+
+        return [
+            'redirect_url' => $createTransaction->redirect_url,
+            'token'        => $createTransaction->token,
+        ];
+    }
+
+    private function buildMidtransParameters(array $params)
+    {
+        $transactionDetails = [
+            'order_id' => $params['transaction_code'],
+            'gross_amount' => $params['amount'],
+        ];
+
+        $user = auth()->user();
+        $splitName = $this->splitName($user->name);
+        $customerDetails = [
+            'first_name' => $splitName['first_name'],
+            'last_name' => $splitName['last_name'],
+            'email' => 'budi.pra@example.com',
+            'phone' => '08111222333',
+        ];
+
+        $enabledPayment = [
+            $params['payment_method']
+        ];
+
+        return [
+            'transaction_details' => $transactionDetails,
+            'customer_details' => $customerDetails,
+            'enabled_payments' => $enabledPayment,
+        ];
+    }
+
+    private function splitName($fullName)
+    {
+        $name = explode(' ', $fullName);
+        $lastName = count($name) > 1 ? array_pop($name) : $fullName;
+        $firstName = implode(' ', $name);
+
+        return [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+        ];
     }
 }
