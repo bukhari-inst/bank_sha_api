@@ -7,9 +7,13 @@ use App\Models\Wallet;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Exceptions\JWTException;
 use Melihovv\Base64ImageDecoder\Base64ImageDecoder;
 
 class AuthController extends Controller
@@ -51,7 +55,7 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'username' => $request->email,
-                'password' => bcrypt($request->passwowrd),
+                'password' => bcrypt($request->password),
                 'profile_picture' => $profilePicture,
                 'ktp' => $ktp,
                 'verified' => ($ktp) ? true : false,
@@ -68,6 +72,32 @@ class AuthController extends Controller
             return response()->json(['message' => 'Succeed'], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
+
+        $validator = Validator::make($credentials, [
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->messages()], 400);
+        }
+
+        try {
+            $token = JWTAuth::attempt($credentials);
+
+            if (!$token) {
+                return response()->json(['message' => 'Login credentials are invalid'], 400);
+            }
+
+            return $token;
+        } catch (JWTException $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
