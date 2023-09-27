@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products');
             $table->float('amount', 10, 2);
             $table->string('transaction_code');
-            $table->text('descripton')->nullable();
+            $table->text('description')->nullable();
             $table->string('status');
             $table->timestamps();
         });

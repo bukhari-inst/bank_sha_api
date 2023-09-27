@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('thumbnail')->nullable();
             $table->float('price', 10, 2);
             $table->enum('status', ['active', 'inactive']);
-            $table->text('descripton')->nullable();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

@@ -18,7 +18,7 @@ class Transaction extends Model
         'product_id',
         'amount',
         'transaction_code',
-        'descripton',
+        'description',
         'status',
     ];
 }
