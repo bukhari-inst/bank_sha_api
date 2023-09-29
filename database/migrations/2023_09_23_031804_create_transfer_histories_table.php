@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('transaction_histories', function (Blueprint $table) {
+        Schema::create('transfer_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sender_id')->constrained('users');
             $table->foreignId('receiver_id')->constrained('users');
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transaction_histories');
+        Schema::dropIfExists('transfer_histories');
     }
 };
