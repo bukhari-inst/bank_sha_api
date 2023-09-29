@@ -11,6 +11,7 @@ use App\Models\TransactionType;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
+use App\Models\TransferHistory;
 use Illuminate\Support\Facades\Validator;
 
 class TransferController extends Controller
@@ -95,11 +96,17 @@ class TransferController extends Controller
             Wallet::where('user_id', $receiver->id)->increment('balance', $request->amount);
 
             // transaction history
-            TransactionHi
+            TransferHistory::create([
+                'sender_id' => $sender->id,
+                'receiver_id' => $receiver->id,
+                'transaction_code' => strtoupper(Str::random(10)),
+            ]);
+
             DB::commit();
+            return response()->json(['message' => 'Transfer Success'], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            # code...
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 }
